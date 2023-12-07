@@ -1,0 +1,52 @@
+version: "3.8"
+
+networks:
+  local:
+    driver: bridge
+
+services:
+  local-db:
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: local_db
+      MYSQL_DATABASE: local_db
+      MYSQL_USER: local_db
+      MYSQL_PASSWORD: local_db
+    networks:
+      - local
+    ports:
+      - '3307:3306'
+    volumes:
+      - ./docker/db:/var/lib/mysql
+    container_name: local_db
+
+  local-project:
+    build: ./docker
+    volumes:
+      - ./:/var/www/html/localhost
+      - ./docker/php-fpm/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+    networks:
+      - local
+    environment:
+      PHP_IDE_CONFIG: "serverName=Project"
+      XDEBUG_SESSION: PHPSTORM
+    container_name: local_project
+
+  local-nginx:
+    image: nginx:1.23
+    volumes:
+      - ./:/var/www/html/localhost
+      - ./docker/nginx/localhost.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - local
+    ports:
+      - "8081:80"
+    container_name: local_nginx
+    depends_on:
+      - local-project
+
+volumes:
+###> doctrine/doctrine-bundle ###
+  database_data:
+###< doctrine/doctrine-bundle ###
